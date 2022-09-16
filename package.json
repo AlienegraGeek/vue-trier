@@ -6,7 +6,8 @@
     "build": "vite build"
   },
   "dependencies": {
-    "vue": "^3.2.37"
+    "vue": "^3.2.37",
+    "agora-rtc-sdk-ng": "latest"
   },
   "devDependencies": {
     "@types/nprogress": "^0.2.0",
