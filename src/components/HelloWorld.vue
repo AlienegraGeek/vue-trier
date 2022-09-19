@@ -1,71 +1,84 @@
 <template>
   <h1>{{ props.msg }}</h1>
   <button @click="count++">count is: {{ count }}</button>
-  <p>Edit <code>components/HelloWorld.vue</code> to test hot module replacement.</p>
+  <p>
+    Edit <code>components/HelloWorld.vue</code> to test hot module replacement.
+  </p>
   <h2 class="left-align">Agora Voice Web SDK Quickstart</h2>
   <div class="row">
     <div>
-      <button type="button" id="join">JOIN</button>
-      <button type="button" id="leave">LEAVE</button>
+      <button id="join" type="button" @click="joinChannel">JOIN</button>
+      <button id="leave" type="button" @click="leaveChannel">LEAVE</button>
     </div>
     <div>
-      <button id="upload" @click="">上传</button>
-      <input id="inputFile" type="file" @change="dealFileChange">
+      <button id="play" type="button" @click="playAudioFile">PLAY</button>
+      <button id="stop" type="button" @click="stopAudioFile">STOP</button>
+    </div>
+    <div>
+      <button id="upload">上传</button>
+      <input id="inputFile" type="file" @change="dealFileChange" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import {ref} from "vue";
+import { onMounted, ref } from "vue";
 import OSS from "ali-oss";
+import AgoraRTC from "agora-rtc-sdk-ng";
 
 const props = defineProps({
   msg: {
     type: String,
-    default: '',
+    default: "",
   },
 });
+const rtc = {
+  localAudioTrack: null,
+  client: null,
+  audioFileTrack: null,
+};
+
+const options = {
+  // Pass your App ID here.
+  appId: "3cef07566b93496798f9de5da63bcc8d",
+  // Set the channel name.
+  channel: "test",
+  // Pass your temp token here.
+  token:
+    "007eJxTYMielSQy9ZhZfjX/b92igrxXJ9fbXOMLn7/JZYpYr+aqEwcUGIyTU9MMzE3NzJIsjU0szcwtLdIsU1JNUxLNjJOSky1SHPU1kg80aCY/NXFhYmSAQBCfhaEktbiEgQEARUggiQ==",
+  // Set the user ID.
+  uid: 123456,
+};
 const count = ref(0);
-const dealFileChange = (e: any) => {
-  let file = e.target.files[0];//拿到上传的file
-  putObject(file);
-}
+
 const client = new OSS({
   // yourRegion填写Bucket所在地域。以华东1（杭州）为例，yourRegion填写为oss-cn-hangzhou。
-  region: 'oss-cn-beijing',
+  region: "oss-cn-beijing",
   // 从STS服务获取的临时访问密钥（AccessKey ID和AccessKey Secret）。
-  accessKeyId: 'LTAI5tD3xc4mANmh9k3uHspM',
-  accessKeySecret: 'qiRda3BMsQeA0wlWCIEgRd2e2O16FM',
+  // accessKeyId: 'LTAI5tD3xc4mANmh9k3uHspM',
+  // accessKeySecret: 'qiRda3BMsQeA0wlWCIEgRd2e2O16FM',
+  accessKeyId: "LTAI7zF9r542KCuW",
+  accessKeySecret: "KKNOLUkQaxWXZOCPx1nghq3Bh8TMOf",
   // 从STS服务获取的安全令牌（SecurityToken）。
   // stsToken: 'yourSecurityToken',
   // 填写Bucket名称。
-  bucket: 'kbtoken'
+  bucket: "kbtoken",
 });
-let data;
-// 创建并填写Blob数据。
-//const data = new Blob(['Hello OSS']);
-// 创建并填写OSS Buffer内容。
-//const data = new OSS.Buffer(['Hello OSS']);
 
-const upload = document.getElementById("upload");
-const inputData = ref(document.getElementById("inputFile"));
 const headers = {
-  // 指定该Object被下载时网页的缓存行为。
-  // 'Cache-Control': 'no-cache',
-  // 指定该Object被下载时的名称。
-  // 'Content-Disposition': 'oss_download.txt',
-  // 指定该Object被下载时的内容编码格式。
-  // 'Content-Encoding': 'UTF-8',
-  // 指定过期时间。
-  // 'Expires': 'Wed, 08 Jul 2022 16:57:01 GMT',
   // 指定Object的存储类型。
-  'x-oss-storage-class': 'Standard',
+  "x-oss-storage-class": "Standard",
   // 指定Object的访问权限。
-  'x-oss-object-acl': 'private',
+  "x-oss-object-acl": "private",
   // 设置Object的标签，可同时设置多个标签。
-  'x-oss-tagging': 'Tag1=1&Tag2=2',
+  "x-oss-tagging": "Tag1=1&Tag2=2",
   // 指定CopyObject操作时是否覆盖同名目标Object。此处设置为true，表示禁止覆盖同名Object。
-  'x-oss-forbid-overwrite': 'true',
+  "x-oss-forbid-overwrite": "true",
+};
+
+const dealFileChange = (e: any) => {
+  const file = e.target.files[0]; // 拿到上传的file
+  putObject(file);
 };
 
 async function putObject(data: File) {
@@ -74,9 +87,9 @@ async function putObject(data: File) {
     // 您可以通过自定义文件名（例如exampleobject.txt）或文件完整路径（例如exampledir/exampleobject.txt）的形式实现将数据上传到当前Bucket或Bucket中的指定目录。
     // data对象可以自定义为file对象、Blob数据或者OSS Buffer。
     const result = await client.put(
-        "test/" + data.name,
-        data
-        //{headers}
+      `test/${data.name}`,
+      data
+      // {headers}
     );
     console.log(result);
   } catch (e) {
@@ -88,10 +101,96 @@ async function putObject(data: File) {
 //   data = document.getElementById("file")!.files[0];
 //   putObject(data);
 // });
+
+async function startBasicCall() {
+  // Create an AgoraRTCClient object.
+  // @ts-ignore
+  rtc.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+  // Listen for the "user-published" event, from which you can get an AgoraRTCRemoteUser object.
+  // @ts-ignore
+  rtc.client.on("user-published", async (user: any, mediaType: any) => {
+    // Subscribe to the remote user when the SDK triggers the "user-published" event
+    // @ts-ignore
+    await rtc.client.subscribe(user, mediaType);
+    console.log("subscribe success");
+
+    // If the remote user publishes an audio track.
+    if (mediaType === "audio") {
+      // Get the RemoteAudioTrack object in the AgoraRTCRemoteUser object.
+      const remoteAudioTrack = user.audioTrack;
+      // Play the remote audio track.
+      remoteAudioTrack.play();
+    }
+    // Listen for the "user-unpublished" event
+    // @ts-ignore
+    rtc.client.on("user-unpublished", async (user) => {
+      // Unsubscribe from the tracks of the remote user.
+      // @ts-ignore
+      await rtc.client.unsubscribe(user);
+    });
+  });
+}
+
+async function joinChannel() {
+  // @ts-ignore
+  await rtc.client.join(
+    options.appId,
+    options.channel,
+    options.token,
+    options.uid
+  );
+  // Create a local audio track from the audio sampled by a microphone.
+  // @ts-ignore
+  rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+  // 通过在线音乐创建音频轨道。
+  // const audioFileTrack = await AgoraRTC.createBufferSourceAudioTrack({
+  //   source: "https://kbtoken.oss-cn-beijing.aliyuncs.com/test/welcome.mp3",
+  // });
+  // // 开始处理来自音频文件的音频数据。
+  // audioFileTrack.startProcessAudioBuffer();
+  // Publish the local audio tracks to the RTC channel.
+  // @ts-ignore
+  await rtc.client.publish([rtc.localAudioTrack]);
+
+  console.log("publish success!");
+}
+
+async function leaveChannel() {
+  // Destroy the local audio track.
+  // @ts-ignore
+  rtc.localAudioTrack.close();
+
+  // Leave the channel.
+  // @ts-ignore
+  await rtc.client.leave();
+}
+
+async function playAudioFile() {
+  // @ts-ignore
+  rtc.audioFileTrack = await AgoraRTC.createBufferSourceAudioTrack({
+    source: "https://kbtoken.oss-cn-beijing.aliyuncs.com/test/welcome.mp3",
+  });
+  // 开始处理来自音频文件的音频数据。
+  // @ts-ignore
+  rtc.audioFileTrack.startProcessAudioBuffer();
+  // @ts-ignore
+  await rtc.client.publish([rtc.localAudioTrack, rtc.audioFileTrack]);
+}
+
+function stopAudioFile() {
+  // 开始处理来自音频文件的音频数据。
+  // @ts-ignore
+  rtc.audioFileTrack.stopProcessAudioBuffer();
+}
+
+onMounted(() => {
+  startBasicCall();
+});
 </script>
 
 <script lang="ts">
 export default {
-  name: 'HelloWorld',
-}
+  name: "HelloWorld",
+};
 </script>
