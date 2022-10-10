@@ -9,6 +9,8 @@
     <div>
       <button id="join" type="button" @click="joinChannel">JOIN</button>
       <button id="leave" type="button" @click="leaveChannel">LEAVE</button>
+      <button id="leave" type="button" @click="unmuteLocalAudio">开麦</button>
+      <button id="leave" type="button" @click="muteLocalAudio">闭麦</button>
     </div>
     <div>
       <button id="play" type="button" @click="playAudioFile">PLAY</button>
@@ -24,7 +26,11 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
 import OSS from "ali-oss";
-import AgoraRTC from "agora-rtc-sdk-ng";
+import AgoraRTC, {
+  IAgoraRTCClient,
+  IBufferSourceAudioTrack,
+  IMicrophoneAudioTrack,
+} from "agora-rtc-sdk-ng";
 
 const props = defineProps({
   msg: {
@@ -33,19 +39,19 @@ const props = defineProps({
   },
 });
 const rtc = {
-  localAudioTrack: null,
-  client: null,
-  audioFileTrack: null,
+  localAudioTrack: null as unknown as IMicrophoneAudioTrack,
+  client: null as unknown as IAgoraRTCClient,
+  audioFileTrack: null as unknown as IBufferSourceAudioTrack,
 };
 
 const options = {
   // Pass your App ID here.
   appId: "3cef07566b93496798f9de5da63bcc8d",
   // Set the channel name.
-  channel: "test",
+  channel: "test2022",
   // Pass your temp token here.
   token:
-    "007eJxTYMielSQy9ZhZfjX/b92igrxXJ9fbXOMLn7/JZYpYr+aqEwcUGIyTU9MMzE3NzJIsjU0szcwtLdIsU1JNUxLNjJOSky1SHPU1kg80aCY/NXFhYmSAQBCfhaEktbiEgQEARUggiQ==",
+    "007eJxTYIj2SavxP1D8Mi9sUcTOgp2WTzzPccTrtya12Bvtfh8ara/AYJycmmZgbmpmlmRpbGJpZm5pkWaZkmqakmhmnJScbJEi3OecPPm+S7LPqw4mRgYIBPE5GEpSi0uMDIyMGBgAvRkh4A==",
   // Set the user ID.
   uid: 123456,
 };
@@ -65,16 +71,16 @@ const client = new OSS({
   bucket: "kbtoken",
 });
 
-const headers = {
-  // 指定Object的存储类型。
-  "x-oss-storage-class": "Standard",
-  // 指定Object的访问权限。
-  "x-oss-object-acl": "private",
-  // 设置Object的标签，可同时设置多个标签。
-  "x-oss-tagging": "Tag1=1&Tag2=2",
-  // 指定CopyObject操作时是否覆盖同名目标Object。此处设置为true，表示禁止覆盖同名Object。
-  "x-oss-forbid-overwrite": "true",
-};
+// const headers = {
+//   // 指定Object的存储类型。
+//   "x-oss-storage-class": "Standard",
+//   // 指定Object的访问权限。
+//   "x-oss-object-acl": "private",
+//   // 设置Object的标签，可同时设置多个标签。
+//   "x-oss-tagging": "Tag1=1&Tag2=2",
+//   // 指定CopyObject操作时是否覆盖同名目标Object。此处设置为true，表示禁止覆盖同名Object。
+//   "x-oss-forbid-overwrite": "true",
+// };
 
 const dealFileChange = (e: any) => {
   const file = e.target.files[0]; // 拿到上传的file
@@ -104,14 +110,11 @@ async function putObject(data: File) {
 
 async function startBasicCall() {
   // Create an AgoraRTCClient object.
-  // @ts-ignore
   rtc.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
   // Listen for the "user-published" event, from which you can get an AgoraRTCRemoteUser object.
-  // @ts-ignore
   rtc.client.on("user-published", async (user: any, mediaType: any) => {
     // Subscribe to the remote user when the SDK triggers the "user-published" event
-    // @ts-ignore
     await rtc.client.subscribe(user, mediaType);
     console.log("subscribe success");
 
@@ -123,17 +126,14 @@ async function startBasicCall() {
       remoteAudioTrack.play();
     }
     // Listen for the "user-unpublished" event
-    // @ts-ignore
     rtc.client.on("user-unpublished", async (user) => {
       // Unsubscribe from the tracks of the remote user.
-      // @ts-ignore
       await rtc.client.unsubscribe(user);
     });
   });
 }
 
 async function joinChannel() {
-  // @ts-ignore
   await rtc.client.join(
     options.appId,
     options.channel,
@@ -141,7 +141,6 @@ async function joinChannel() {
     options.uid
   );
   // Create a local audio track from the audio sampled by a microphone.
-  // @ts-ignore
   rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
   // 通过在线音乐创建音频轨道。
   // const audioFileTrack = await AgoraRTC.createBufferSourceAudioTrack({
@@ -150,7 +149,6 @@ async function joinChannel() {
   // // 开始处理来自音频文件的音频数据。
   // audioFileTrack.startProcessAudioBuffer();
   // Publish the local audio tracks to the RTC channel.
-  // @ts-ignore
   await rtc.client.publish([rtc.localAudioTrack]);
 
   console.log("publish success!");
@@ -158,29 +156,33 @@ async function joinChannel() {
 
 async function leaveChannel() {
   // Destroy the local audio track.
-  // @ts-ignore
   rtc.localAudioTrack.close();
 
   // Leave the channel.
-  // @ts-ignore
   await rtc.client.leave();
 }
 
+// 闭麦
+function muteLocalAudio() {
+  rtc.localAudioTrack.setMuted(true);
+}
+
+// 取消闭麦
+function unmuteLocalAudio() {
+  rtc.localAudioTrack.setMuted(false);
+}
+
 async function playAudioFile() {
-  // @ts-ignore
   rtc.audioFileTrack = await AgoraRTC.createBufferSourceAudioTrack({
     source: "https://kbtoken.oss-cn-beijing.aliyuncs.com/test/welcome.mp3",
   });
   // 开始处理来自音频文件的音频数据。
-  // @ts-ignore
   rtc.audioFileTrack.startProcessAudioBuffer();
-  // @ts-ignore
   await rtc.client.publish([rtc.localAudioTrack, rtc.audioFileTrack]);
 }
 
 function stopAudioFile() {
   // 开始处理来自音频文件的音频数据。
-  // @ts-ignore
   rtc.audioFileTrack.stopProcessAudioBuffer();
 }
 

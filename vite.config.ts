@@ -9,7 +9,7 @@ export default defineConfig({
       strict: true,
     },
     host: "0.0.0.0",
-    port: 2133,
+    port: 2040,
   },
   plugins: [vue()],
 });
