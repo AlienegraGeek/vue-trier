@@ -21,7 +21,7 @@
     ]
   },
   "dependencies": {
-    "agora-rtc-sdk-ng": "latest",
+    "agora-rtc-sdk-ng": "4.14.0",
     "ali-oss": "^6.17.1",
     "vue": "^3.2.37"
   },

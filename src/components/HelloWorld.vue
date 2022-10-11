@@ -48,10 +48,10 @@ const options = {
   // Pass your App ID here.
   appId: "3cef07566b93496798f9de5da63bcc8d",
   // Set the channel name.
-  channel: "test2022",
+  channel: "test708",
   // Pass your temp token here.
   token:
-    "007eJxTYIj2SavxP1D8Mi9sUcTOgp2WTzzPccTrtya12Bvtfh8ara/AYJycmmZgbmpmlmRpbGJpZm5pkWaZkmqakmhmnJScbJEi3OecPPm+S7LPqw4mRgYIBPE5GEpSi0uMDIyMGBgAvRkh4A==",
+    "007eJxTYIhRdX2ZYcasvjWXU+ruR87MFcr9u7aF/sq59uZHgPXL1wkKDMbJqWkG5qZmZkmWxiaWZuaWFmmWKammKYlmxknJyRYpbx66JOcYuyWLc+cxMzJAIIjPzlCSWlxibmDBwAAAvHAhTQ==",
   // Set the user ID.
   uid: 123456,
 };
@@ -142,12 +142,7 @@ async function joinChannel() {
   );
   // Create a local audio track from the audio sampled by a microphone.
   rtc.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-  // 通过在线音乐创建音频轨道。
-  // const audioFileTrack = await AgoraRTC.createBufferSourceAudioTrack({
-  //   source: "https://kbtoken.oss-cn-beijing.aliyuncs.com/test/welcome.mp3",
-  // });
-  // // 开始处理来自音频文件的音频数据。
-  // audioFileTrack.startProcessAudioBuffer();
+
   // Publish the local audio tracks to the RTC channel.
   await rtc.client.publish([rtc.localAudioTrack]);
 
