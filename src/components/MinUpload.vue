@@ -6,14 +6,14 @@
       <button @click="uploadFile">上传</button>
     </div>
     <div>
-      <input type="text" v-model="fileName" placeholder="Enter file name" />
+      <input type="text" v-model="fileName" placeholder="输入文件名" />
       <button @click="downloadFile">下载</button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 import axios from 'axios'
 
 const selectedFile = ref<File | null>(null)
@@ -44,10 +44,10 @@ const uploadFile = async () => {
       }
     })
     
-    const presignedUrl = response.data.url
+    const preSignedUrl = response.data.url
     
     // 使用预签名 URL 上传文件
-    const uploadResponse = await axios.put(presignedUrl, file, {
+    const uploadResponse = await axios.put(preSignedUrl, file, {
       headers: {
         'Content-Type': file.type
       }
@@ -81,10 +81,10 @@ const downloadFile = async () => {
       }
     })
     
-    const presignedUrl = response.data.url
+    const preSignedUrl = response.data.url
     
     // 使用预签名 URL 下载文件
-    const downloadResponse = await axios.get(presignedUrl, {
+    const downloadResponse = await axios.get(preSignedUrl, {
       responseType: 'blob'
     })
     
@@ -101,11 +101,4 @@ const downloadFile = async () => {
     alert('Error downloading file')
   }
 }
-
-</script>
-
-<script lang="ts">
-export default {
-  name: "HelloWorld",
-};
 </script>
