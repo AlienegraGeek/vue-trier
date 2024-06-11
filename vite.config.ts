@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
-// https://vitejs.dev/config/
 export default defineConfig({
   server: {
     open: true,
@@ -9,7 +8,12 @@ export default defineConfig({
       strict: true,
     },
     host: "0.0.0.0",
-    port: 2040,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:2040', // 后端真实数据服务地址
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [vue()],
 });
